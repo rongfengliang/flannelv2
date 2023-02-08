@@ -53,7 +53,6 @@ type CmdLineOpts struct {
 	help           bool
 	version        bool
 	listen         string
-	vni            int
 	remote         string
 	remoteKeyfile  string
 	remoteCertfile string

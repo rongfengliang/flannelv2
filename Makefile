@@ -36,7 +36,7 @@ IPTABLES_VERSION=1.4.21
 
 dist/flanneld: $(shell find . -type f  -name '*.go')
 	go build -o dist/flanneld \
-	  -ldflags "-X github.com/coreos/flannel/version.Version=$(TAG)"
+	  -ldflags '-X github.com/coreos/flannel/version.Version=$(TAG) -extldflags "-static"'
 
 test: license-check gofmt
 	go test -cover $(TEST_PACKAGES_EXPANDED)

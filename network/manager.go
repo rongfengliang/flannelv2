@@ -43,7 +43,6 @@ type CmdLineOpts struct {
 	iface                  string
 	networks               string
 	watchNetworks          bool
-	vni                    int
 	subnetLeaseRenewMargin int
 }
 
@@ -58,7 +57,6 @@ func init() {
 	flag.StringVar(&opts.iface, "iface", "", "interface to use (IP or name) for inter-host communication")
 	flag.StringVar(&opts.networks, "networks", "", "run in multi-network mode and service the specified networks")
 	flag.IntVar(&opts.subnetLeaseRenewMargin, "subnet-lease-renew-margin", 60, "Subnet lease renewal margin, in minutes.")
-	flag.IntVar(&opts.vni, "vni", 0, "vxlan vni")
 	flag.BoolVar(&opts.watchNetworks, "watch-networks", false, "run in multi-network mode and watch for networks from 'networks' or all networks")
 	flag.BoolVar(&opts.ipMasq, "ip-masq", false, "setup IP masquerade rule for traffic destined outside of overlay network")
 }
@@ -72,7 +70,6 @@ type Manager struct {
 	networks        map[string]*Network
 	watch           bool
 	ipMasq          bool
-	vni             int
 	extIface        *backend.ExternalInterface
 }
 
@@ -108,9 +105,6 @@ func NewNetworkManager(ctx context.Context, sm subnet.Manager) (*Manager, error)
 		extIface:        extIface,
 	}
 
-	if opts.vni >= 1 {
-		manager.vni = opts.vni
-	}
 	for _, name := range strings.Split(opts.networks, ",") {
 		if name != "" {
 			manager.allowedNetworks[name] = true
@@ -294,7 +288,7 @@ func (m *Manager) watchNetworks() {
 
 				switch e.Type {
 				case subnet.EventAdded:
-					n := NewNetworkV2(m.ctx, m.sm, m.vni, m.bm, netname, m.ipMasq)
+					n := NewNetwork(m.ctx, m.sm, m.bm, netname, m.ipMasq)
 					if err := m.addNetwork(n); err != nil {
 						log.Infof("Network %q: %v", netname, err)
 						continue
@@ -333,7 +327,7 @@ func (m *Manager) Run(ctx context.Context) {
 			if err == nil {
 				for _, n := range result.Snapshot {
 					if m.isNetAllowed(n) {
-						m.networks[n] = NewNetworkV2(ctx, m.sm, m.vni, m.bm, n, m.ipMasq)
+						m.networks[n] = NewNetwork(ctx, m.sm, m.bm, n, m.ipMasq)
 					}
 				}
 				break
@@ -348,7 +342,7 @@ func (m *Manager) Run(ctx context.Context) {
 			}
 		}
 	} else {
-		m.networks[""] = NewNetworkV2(ctx, m.sm, m.vni, m.bm, "", m.ipMasq)
+		m.networks[""] = NewNetwork(ctx, m.sm, m.bm, "", m.ipMasq)
 	}
 
 	// Run existing networks

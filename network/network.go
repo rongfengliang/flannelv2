@@ -57,20 +57,6 @@ func NewNetwork(ctx context.Context, sm subnet.Manager, bm backend.Manager, name
 	}
 }
 
-func NewNetworkV2(ctx context.Context, sm subnet.Manager, vni int, bm backend.Manager, name string, ipMasq bool) *Network {
-	ctx, cf := context.WithCancel(ctx)
-
-	return &Network{
-		Name:       name,
-		sm:         sm,
-		bm:         bm,
-		ipMasq:     ipMasq,
-		vni:        vni,
-		ctx:        ctx,
-		cancelFunc: cf,
-	}
-}
-
 func wrapError(desc string, err error) error {
 	if err == context.Canceled {
 		return err

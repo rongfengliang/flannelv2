@@ -32,6 +32,23 @@ type Config struct {
 	Backend     json.RawMessage `json:",omitempty"`
 }
 
+type BackendConf struct {
+	Type string
+	VNI  int
+}
+
+func parseBackendConf(be json.RawMessage) (BackendConf, error) {
+	var bt BackendConf
+	if len(be) == 0 {
+		return BackendConf{}, nil
+	} else {
+		if err := json.Unmarshal(be, &bt); err != nil {
+			return BackendConf{}, fmt.Errorf("error decoding Backend property of config: %v", err)
+		}
+	}
+	return bt, nil
+}
+
 func parseBackendType(be json.RawMessage) (string, error) {
 	var bt struct {
 		Type string
@@ -46,6 +63,22 @@ func parseBackendType(be json.RawMessage) (string, error) {
 	}
 
 	return bt.Type, nil
+}
+
+func parseBackendVNI(be json.RawMessage) (int, error) {
+	var bt struct {
+		VNI int
+	}
+
+	if len(be) == 0 {
+		return 1, nil
+	} else {
+		if err := json.Unmarshal(be, &bt); err != nil {
+			return 0, fmt.Errorf("error decoding Backend property of config: %v", err)
+		}
+	}
+
+	return bt.VNI, nil
 }
 
 func ParseConfig(s string) (*Config, error) {
@@ -86,11 +119,11 @@ func ParseConfig(s string) (*Config, error) {
 		return nil, errors.New("SubnetMax is not in the range of the Network")
 	}
 
-	bt, err := parseBackendType(cfg.Backend)
+	bt, err := parseBackendConf(cfg.Backend)
 	if err != nil {
 		return nil, err
 	}
-	cfg.BackendType = bt
-
+	cfg.BackendType = bt.Type
+	cfg.VNI = bt.VNI
 	return cfg, nil
 }
